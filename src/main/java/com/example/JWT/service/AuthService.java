@@ -1,8 +1,10 @@
 package com.example.JWT.service;
 
+import com.example.JWT.dto.LoginRequest;
 import com.example.JWT.entity.Role;
 import com.example.JWT.entity.User;
 import com.example.JWT.repository.UserRepository;
+import com.example.JWT.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -11,10 +13,14 @@ import org.springframework.stereotype.Service;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+
     }
 
     public User registerUser(String username, String email, String password) {
@@ -30,5 +36,24 @@ public class AuthService {
 
         return userRepository.save(user);
     }
+
+    public String login(LoginRequest loginRequest) {
+        // Find the user by username or email
+        User user = userRepository.findByUsername(loginRequest.getUsernameOrEmail())
+                .or(() -> userRepository.findByEmail(loginRequest.getUsernameOrEmail()))
+                .orElseThrow(() -> new RuntimeException("Invalid username/email or password"));
+
+        // Validate the password
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid username/email or password");
+        }
+
+        // Generate tokens
+        String accessToken = jwtUtil.generateAccessToken(user);
+        String refreshToken = jwtUtil.generateRefreshToken(user);
+
+        return String.format("{\"accessToken\":\"%s\", \"refreshToken\":\"%s\"}", accessToken, refreshToken);
+    }
+
 }
 

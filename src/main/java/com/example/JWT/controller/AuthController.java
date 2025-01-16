@@ -1,8 +1,10 @@
 package com.example.JWT.controller;
 
+import com.example.JWT.dto.LoginRequest;
 import com.example.JWT.entity.User;
 import com.example.JWT.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,5 +29,17 @@ public class AuthController {
         System.out.println("test");
         return "Test";
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        try {
+            // Delegate to AuthService
+            String tokens = authService.login(loginRequest);
+            return ResponseEntity.ok(tokens);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
+
 
 }

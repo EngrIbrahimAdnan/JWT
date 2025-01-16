@@ -13,10 +13,10 @@ public class SecurityConfig {
         http
                 .csrf().disable() // Disable CSRF for development (enable in production with proper configuration)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**", "/test").permitAll() // Allow public access to /api/auth and /test
+                        .requestMatchers("/api/auth/**").permitAll() // Allow public access to /api/auth and /test
                         .anyRequest().authenticated() // Require authentication for all other endpoints
                 )
-                .httpBasic(); // Use basic authentication (or customize it as needed)
+                .httpBasic().disable() ; // Use basic authentication (or customize it as needed)
 
         return http.build();
     }
