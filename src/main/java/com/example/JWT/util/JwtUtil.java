@@ -1,6 +1,8 @@
 package com.example.JWT.util;
 
 import com.example.JWT.entity.User;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -11,6 +13,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -21,9 +24,11 @@ public class JwtUtil {
     }
 
     public String generateAccessToken(User user) {
+        String tokenId = UUID.randomUUID().toString();
         return Jwts.builder()
+                .setId(tokenId)
                 .setSubject(user.getUsername())
-                .claim("role", user.getRole().name())
+                .claim("roles", user.getRole().name())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1 hour
                 .signWith(secretKey)
@@ -38,5 +43,23 @@ public class JwtUtil {
                 .signWith(secretKey)
                 .compact();
     }
+
+    public Claims validateToken(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (JwtException e) {
+            throw new IllegalArgumentException("Invalid token", e);
+        }
+    }
+
+    public boolean isRefreshTokenValid(String refreshToken) {
+        Claims claims = validateToken(refreshToken);
+        return claims.getExpiration().after(new Date()); // Ensure it's not expired
+    }
+
 }
 
